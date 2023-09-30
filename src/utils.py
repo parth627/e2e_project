@@ -15,11 +15,11 @@ def save_object(file_path, obj):
 
     except Exception as exception:
         raise CustomException(exception, sys)
-    
-def evaluate_model(true_values, predicted_values):
-    # mae = mean_absolute_error(true_values, predicted_values)
-    # mse = mean_squared_error(true_values, predicted_values)
-    # rmse = np.sqrt(mse)
-    r_square_score = r2_score(true_values, predicted_values)
-    # return mae,mse,rmse,r_square_score
-    return r_square_score
+
+def load_object(file_path):
+    try:
+        with open(file_path,"rb") as file_obj:
+            return dill.load(file_obj)
+        
+    except Exception as exception:
+        raise CustomException(exception,sys)

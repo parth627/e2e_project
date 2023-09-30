@@ -16,7 +16,8 @@ from sklearn.tree import DecisionTreeRegressor
 from xgboost import XGBRegressor
 from src.exception import CustomException 
 from src.logger import logging
-from src.utils import save_object,evaluate_model
+from src.utils import save_object
+from sklearn.model_selection import GridSearchCV
 
 @dataclass
 class ModelTrainerConfig:
@@ -39,20 +40,60 @@ class ModelTrainer:
                 "Linear Regressor": LinearRegression(),
                 "Random Forest Regressor":RandomForestRegressor(),
                 "Gradient Boosting Regressor":GradientBoostingRegressor(),
-                "Lasso": Lasso(),
-                "Ridge": Ridge(),
-                "K-Neighbors Regressor":KNeighborsRegressor(),
                 "Decision Tree": DecisionTreeRegressor(),
-                "RandomForestRegressor": RandomForestRegressor(),
                 "XGBRegressor": XGBRegressor(),
                 "Cat Boosting Regressor": CatBoostRegressor(verbose=False),
                 "AdaBoostRegressor": AdaBoostRegressor()
             }
 
+            params={
+                "Decision Tree": {
+                    'criterion':['squared_error', 'friedman_mse', 'absolute_error', 'poisson'],
+                    # 'splitter':['best','random'],
+                    # 'max_features':['sqrt','log2'],
+                },
+                "Random Forest Regressor":{
+                    # 'criterion':['squared_error', 'friedman_mse', 'absolute_error', 'poisson'],
+                 
+                    # 'max_features':['sqrt','log2',None],
+                    'n_estimators': [8,16,32,64,128,256]
+                },
+                "Gradient Boosting Regressor":{
+                    # 'loss':['squared_error', 'huber', 'absolute_error', 'quantile'],
+                    'learning_rate':[.1,.01,.05,.001],
+                    'subsample':[0.6,0.7,0.75,0.8,0.85,0.9],
+                    # 'criterion':['squared_error', 'friedman_mse'],
+                    # 'max_features':['auto','sqrt','log2'],
+                    'n_estimators': [8,16,32,64,128,256]
+                },
+                "Linear Regressor":{},
+                "XGBRegressor":{
+                    'learning_rate':[.1,.01,.05,.001],
+                    'n_estimators': [8,16,32,64,128,256]
+                },
+                "Cat Boosting Regressor":{
+                    'depth': [6,8,10],
+                    'learning_rate': [0.01, 0.05, 0.1],
+                    'iterations': [30, 50, 100]
+                },
+                "AdaBoostRegressor":{
+                    'learning_rate':[.1,.01,0.5,.001],
+                    # 'loss':['linear','square','exponential'],
+                    'n_estimators': [8,16,32,64,128,256]
+                }
+                
+            }
             model_report = {}
 
             for i in range(len(list(models))):
                 model = list(models.values())[i]
+
+                para = params[list(models)[i]]
+                
+                gs = GridSearchCV(model,para,cv=3)
+                gs.fit(X_train,y_train)
+
+                model.set_params(**gs.best_params_)
                 model.fit(X_train,y_train)
 
                 y_test_pred = model.predict(X_test)
